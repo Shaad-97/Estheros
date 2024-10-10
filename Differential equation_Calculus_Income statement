@@ -1,0 +1,70 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+
+def income_growth(income, t, growth_rate):
+    return growth_rate * income
+
+years = np.arange(2021, 2028)
+historical_income = [1000, 1200, 1500]  
+growth_rate = 0.05  
+
+initial_income = historical_income[-1]
+forecast_years = np.arange(2024, 2028)
+
+time = np.linspace(2023, 2027, 100)
+forecast_income_detailed = odeint(income_growth, initial_income, time, args=(growth_rate,))
+
+forecast_income_simple = initial_income * (1 + growth_rate) ** (forecast_years - 2023)
+
+income_statement = pd.DataFrame({
+    'Year': years,
+    'Income': np.concatenate([historical_income, forecast_income_simple])
+})
+
+print('Income Statement (Detailed Workings)')
+for year, income in zip(income_statement['Year'], income_statement['Income']):
+    print(f'Year {year}: Income = {income:.2f}')
+
+plt.figure(figsize=(14, 10))
+
+plt.subplot(3, 2, 1)
+plt.plot(years[:3], historical_income, 'bo-', label="Historical Income")
+plt.plot(forecast_years, forecast_income_simple, 'ro-', label="Forecasted Income")
+plt.title('Simple Projection Income Forecast')
+plt.xlabel('Year')
+plt.ylabel('Income')
+plt.legend()
+
+plt.subplot(3, 2, 2)
+plt.plot(time, forecast_income_detailed, 'r-', label="Forecasted Income (Differential Eq.)")
+plt.title('Differential Equation-Based Income Forecast')
+plt.xlabel('Year')
+plt.ylabel('Income')
+plt.legend()
+
+plt.subplot(3, 2, 3)
+plt.bar(income_statement['Year'], income_statement['Income'], color='purple')
+plt.title('Income Forecast Summary')
+plt.xlabel('Year')
+plt.ylabel('Income')
+
+plt.subplot(3, 2, 4)
+plt.plot(forecast_years, forecast_income_simple, 'go-', label="Simple Growth Forecast")
+plt.plot(time, forecast_income_detailed, 'r-', label="Differential Eq. Forecast")
+plt.title('Comparison: Simple vs Differential Forecasts')
+plt.xlabel('Year')
+plt.ylabel('Income')
+plt.legend()
+
+plt.subplot(3, 2, 5)
+income_diff = np.diff(income_statement['Income'])
+plt.plot(income_statement['Year'][1:], income_diff, 'c-', label='Income Difference Year over Year')
+plt.title('Income Change Over Time')
+plt.xlabel('Year')
+plt.ylabel('Income Change')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
