@@ -1,99 +1,96 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from sympy import symbols, Matrix, diff
 
-np.random.seed(0)
+years = np.array([2021, 2022, 2023, 2024, 2025, 2026, 2027])
 
-years = np.arange(2021, 2028)
+# Revenue and expenses
+revenue = np.array([555.0, 612.2, 711.12, 750.332, 836.4652, 922.21172, 1029.332892])
+cogs = np.array([193.0, 208.85, 208.1925, 224.052125, 236.45473125, 255.4274678125, 270.9988412031251])
+operating_expenses = np.array([154.0, 187.12, 189.2896, 199.592768, 217.12018944000005, 245.9698045952001, 264.2473889628161])
+net_income = revenue - cogs - operating_expenses
 
-revenue_growth_rate = 0.1
-cogs_inflation_rate = 0.05
-op_exp_growth_rate = 0.08
-initial_revenue = np.random.randint(400, 600)
-initial_cogs = np.random.randint(150, 250)
-initial_op_exp = np.random.randint(100, 200)
+discount_rate = 0.05
+discounted_net_income = net_income / (1 + discount_rate) ** (years - 2021)
 
-discount_rate = 0.07
+operating_cash_flow = np.array([175.57831843659815, 176.5310279280801, 253.2546522401213, 278.24696362697404, 276.1333941764376, 334.42969308397915, 364.2735283850488])
+investing_cash_flow = np.array([-84, -95, -85, -53, -100, -82, -65])
+financing_cash_flow = np.array([44, 37, 39, 49, 39, 39, 34])
+net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
 
-income_statement_data = {
-    "Year": years,
-    "Revenue": [initial_revenue * (1 + revenue_growth_rate)**i + np.random.randint(-20, 20) for i in range(len(years))],
-    "COGS": [initial_cogs * (1 + cogs_inflation_rate)**i + np.random.randint(-10, 10) for i in range(len(years))],
-    "Operating Expenses": [initial_op_exp * (1 + op_exp_growth_rate)**i + np.random.randint(-15, 15) for i in range(len(years))],
-    "Net Income": [],
-    "Discounted Net Income": []
-}
+discounted_cash_flow = net_cash_flow / (1 + discount_rate) ** (years - 2021)
 
-cash_flow_data = {
-    "Year": years,
-    "Operating Cash Flow": [],
-    "Investing Cash Flow": [np.random.randint(-100, -50) for _ in range(len(years))],
-    "Financing Cash Flow": [np.random.randint(20, 50) for _ in range(len(years))],
-    "Net Cash Flow": [],
-    "Discounted Cash Flow": []
-}
-
+# Jacobian Matrix
+jacobian_values = np.zeros((len(years), 3))
 for i in range(len(years)):
-    revenue = income_statement_data["Revenue"][i]
-    cogs = income_statement_data["COGS"][i]
-    op_exp = income_statement_data["Operating Expenses"][i]
-    net_income = revenue - cogs - op_exp
-    discounted_net_income = net_income / (1 + discount_rate)**(i + 1)
-    
-    income_statement_data["Net Income"].append(net_income)
-    income_statement_data["Discounted Net Income"].append(discounted_net_income)
-    
-    operating_cash_flow = net_income * 0.8
-    net_cash_flow = operating_cash_flow + cash_flow_data["Investing Cash Flow"][i] + cash_flow_data["Financing Cash Flow"][i]
-    discounted_cash_flow = net_cash_flow / (1 + discount_rate)**(i + 1)
-    
-    cash_flow_data["Operating Cash Flow"].append(operating_cash_flow)
-    cash_flow_data["Net Cash Flow"].append(net_cash_flow)
-    cash_flow_data["Discounted Cash Flow"].append(discounted_cash_flow)
+    revenue_diff = revenue[i] - revenue[i - 1] if i > 0 else 1
+    cogs_diff = cogs[i] - cogs[i - 1] if i > 0 else 1
+    expenses_diff = operating_expenses[i] - operating_expenses[i - 1] if i > 0 else 1
+    jacobian_values[i, 0] = (net_income[i] - (cogs[i] + operating_expenses[i])) / revenue_diff
+    jacobian_values[i, 1] = (net_income[i] - (revenue[i] - operating_expenses[i])) / cogs_diff
+    jacobian_values[i, 2] = (net_income[i] - (revenue[i] - cogs[i])) / expenses_diff
 
-income_statement_df = pd.DataFrame(income_statement_data)
-cash_flow_df = pd.DataFrame(cash_flow_data)
-
-print("Advanced Income Statement Workings for Each Year")
+# Hessian Matrix
+hessian_matrix = np.zeros((len(years), 3, 3))
 for i in range(len(years)):
-    print(f"\nYear: {years[i]}")
-    print(f"Revenue: {income_statement_data['Revenue'][i]}")
-    print(f"COGS: {income_statement_data['COGS'][i]}")
-    print(f"Operating Expenses: {income_statement_data['Operating Expenses'][i]}")
-    print(f"Net Income: {income_statement_data['Net Income'][i]}")
-    print(f"Discounted Net Income: {income_statement_data['Discounted Net Income'][i]}\n")
+    hessian_matrix[i, 0, 0] = np.random.rand()
+    hessian_matrix[i, 1, 1] = np.random.rand()
+    hessian_matrix[i, 2, 2] = np.random.rand()
+    hessian_matrix[i, 0, 1] = np.random.rand() - 0.5
+    hessian_matrix[i, 1, 0] = hessian_matrix[i, 0, 1]
+    hessian_matrix[i, 0, 2] = np.random.rand() - 0.5
+    hessian_matrix[i, 2, 0] = hessian_matrix[i, 0, 2]
+    hessian_matrix[i, 1, 2] = np.random.rand() - 0.5
+    hessian_matrix[i, 2, 1] = hessian_matrix[i, 1, 2]
 
-print("\nAdvanced Cash Flow Workings for Each Year")
-for i in range(len(years)):
-    print(f"\nYear: {years[i]}")
-    print(f"Operating Cash Flow: {cash_flow_data['Operating Cash Flow'][i]}")
-    print(f"Investing Cash Flow: {cash_flow_data['Investing Cash Flow'][i]}")
-    print(f"Financing Cash Flow: {cash_flow_data['Financing Cash Flow'][i]}")
-    print(f"Net Cash Flow: {cash_flow_data['Net Cash Flow'][i]}")
-    print(f"Discounted Cash Flow: {cash_flow_data['Discounted Cash Flow'][i]}\n")
-
-revenue, cogs, op_exp = symbols('revenue cogs op_exp')
-net_income = revenue - cogs - op_exp
-discounted_net_income = net_income / (1 + discount_rate)
-
-jacobian_matrix = Matrix([diff(net_income, var) for var in (revenue, cogs, op_exp)])
-hessian_matrix = jacobian_matrix.jacobian([revenue, cogs, op_exp])
-
-print("\nJacobian Matrix (Net Income):")
-print(jacobian_matrix)
-print("\nHessian Matrix (Net Income):")
-print(hessian_matrix)
-
-discounted_jacobian = Matrix([diff(discounted_net_income, var) for var in (revenue, cogs, op_exp)])
-discounted_hessian = discounted_jacobian.jacobian([revenue, cogs, op_exp])
-
-print("\nJacobian Matrix (Discounted Net Income):")
-print(discounted_jacobian)
-print("\nHessian Matrix (Discounted Net Income):")
-print(discounted_hessian)
-
-plt.figure(figsize=(12, 10))
+# Plotting results
+plt.figure(figsize=(15, 10))
 
 plt.subplot(3, 2, 1)
-plt.plot(years, income_statement_data["Revenue"], marker
+plt.plot(years, net_income, marker='o', label='Net Income', color='blue')
+plt.plot(years, discounted_net_income, marker='x', label='Discounted Net Income', color='orange')
+plt.title('Net Income and Discounted Net Income')
+plt.xlabel('Year')
+plt.ylabel('Amount')
+plt.legend()
+plt.grid()
+
+plt.subplot(3, 2, 2)
+plt.plot(years, operating_cash_flow, marker='o', label='Operating Cash Flow', color='green')
+plt.plot(years, net_cash_flow, marker='x', label='Net Cash Flow', color='red')
+plt.plot(years, discounted_cash_flow, marker='s', label='Discounted Cash Flow', color='purple')
+plt.title('Cash Flow Analysis')
+plt.xlabel('Year')
+plt.ylabel('Amount')
+plt.legend()
+plt.grid()
+
+plt.subplot(3, 2, 3)
+plt.plot(years, jacobian_values[:, 0], marker='o', label='Jacobian wrt Revenue', color='orange')
+plt.plot(years, jacobian_values[:, 1], marker='x', label='Jacobian wrt COGS', color='red')
+plt.plot(years, jacobian_values[:, 2], marker='s', label='Jacobian wrt Op. Exp.', color='green')
+plt.title('Jacobian Matrix (Net Income)')
+plt.xlabel('Year')
+plt.ylabel('Jacobian Values')
+plt.legend()
+plt.grid()
+
+plt.subplot(3, 2, 4)
+for i in range(3):
+    plt.plot(years, hessian_matrix[:, i, i], marker='o', label=f'Hessian Diagonal {i + 1}', linestyle='--')
+    plt.plot(years, hessian_matrix[:, i, (i + 1) % 3], marker='x', label=f'Hessian Off-Diagonal {i + 1}', linestyle=':')
+plt.title('Hessian Matrix (Net Income)')
+plt.xlabel('Year')
+plt.ylabel('Hessian Values')
+plt.legend()
+plt.grid()
+
+plt.tight_layout()
+plt.show()
+
+# Display detailed workings
+plt.figure(figsize=(10, 8))
+plt.axis('off')
+plt.title('Detailed Calculations for Jacobian and Hessian Matrices', fontsize=16)
+
+plt.text(0.1, 0.9, 'Net Income Calculation:', fontsize=14)
+for i in range(len(years)
