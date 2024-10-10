@@ -1,0 +1,99 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sympy import symbols, Matrix, diff
+
+np.random.seed(0)
+
+years = np.arange(2021, 2028)
+
+revenue_growth_rate = 0.1
+cogs_inflation_rate = 0.05
+op_exp_growth_rate = 0.08
+initial_revenue = np.random.randint(400, 600)
+initial_cogs = np.random.randint(150, 250)
+initial_op_exp = np.random.randint(100, 200)
+
+discount_rate = 0.07
+
+income_statement_data = {
+    "Year": years,
+    "Revenue": [initial_revenue * (1 + revenue_growth_rate)**i + np.random.randint(-20, 20) for i in range(len(years))],
+    "COGS": [initial_cogs * (1 + cogs_inflation_rate)**i + np.random.randint(-10, 10) for i in range(len(years))],
+    "Operating Expenses": [initial_op_exp * (1 + op_exp_growth_rate)**i + np.random.randint(-15, 15) for i in range(len(years))],
+    "Net Income": [],
+    "Discounted Net Income": []
+}
+
+cash_flow_data = {
+    "Year": years,
+    "Operating Cash Flow": [],
+    "Investing Cash Flow": [np.random.randint(-100, -50) for _ in range(len(years))],
+    "Financing Cash Flow": [np.random.randint(20, 50) for _ in range(len(years))],
+    "Net Cash Flow": [],
+    "Discounted Cash Flow": []
+}
+
+for i in range(len(years)):
+    revenue = income_statement_data["Revenue"][i]
+    cogs = income_statement_data["COGS"][i]
+    op_exp = income_statement_data["Operating Expenses"][i]
+    net_income = revenue - cogs - op_exp
+    discounted_net_income = net_income / (1 + discount_rate)**(i + 1)
+    
+    income_statement_data["Net Income"].append(net_income)
+    income_statement_data["Discounted Net Income"].append(discounted_net_income)
+    
+    operating_cash_flow = net_income * 0.8
+    net_cash_flow = operating_cash_flow + cash_flow_data["Investing Cash Flow"][i] + cash_flow_data["Financing Cash Flow"][i]
+    discounted_cash_flow = net_cash_flow / (1 + discount_rate)**(i + 1)
+    
+    cash_flow_data["Operating Cash Flow"].append(operating_cash_flow)
+    cash_flow_data["Net Cash Flow"].append(net_cash_flow)
+    cash_flow_data["Discounted Cash Flow"].append(discounted_cash_flow)
+
+income_statement_df = pd.DataFrame(income_statement_data)
+cash_flow_df = pd.DataFrame(cash_flow_data)
+
+print("Advanced Income Statement Workings for Each Year")
+for i in range(len(years)):
+    print(f"\nYear: {years[i]}")
+    print(f"Revenue: {income_statement_data['Revenue'][i]}")
+    print(f"COGS: {income_statement_data['COGS'][i]}")
+    print(f"Operating Expenses: {income_statement_data['Operating Expenses'][i]}")
+    print(f"Net Income: {income_statement_data['Net Income'][i]}")
+    print(f"Discounted Net Income: {income_statement_data['Discounted Net Income'][i]}\n")
+
+print("\nAdvanced Cash Flow Workings for Each Year")
+for i in range(len(years)):
+    print(f"\nYear: {years[i]}")
+    print(f"Operating Cash Flow: {cash_flow_data['Operating Cash Flow'][i]}")
+    print(f"Investing Cash Flow: {cash_flow_data['Investing Cash Flow'][i]}")
+    print(f"Financing Cash Flow: {cash_flow_data['Financing Cash Flow'][i]}")
+    print(f"Net Cash Flow: {cash_flow_data['Net Cash Flow'][i]}")
+    print(f"Discounted Cash Flow: {cash_flow_data['Discounted Cash Flow'][i]}\n")
+
+revenue, cogs, op_exp = symbols('revenue cogs op_exp')
+net_income = revenue - cogs - op_exp
+discounted_net_income = net_income / (1 + discount_rate)
+
+jacobian_matrix = Matrix([diff(net_income, var) for var in (revenue, cogs, op_exp)])
+hessian_matrix = jacobian_matrix.jacobian([revenue, cogs, op_exp])
+
+print("\nJacobian Matrix (Net Income):")
+print(jacobian_matrix)
+print("\nHessian Matrix (Net Income):")
+print(hessian_matrix)
+
+discounted_jacobian = Matrix([diff(discounted_net_income, var) for var in (revenue, cogs, op_exp)])
+discounted_hessian = discounted_jacobian.jacobian([revenue, cogs, op_exp])
+
+print("\nJacobian Matrix (Discounted Net Income):")
+print(discounted_jacobian)
+print("\nHessian Matrix (Discounted Net Income):")
+print(discounted_hessian)
+
+plt.figure(figsize=(12, 10))
+
+plt.subplot(3, 2, 1)
+plt.plot(years, income_statement_data["Revenue"], marker
