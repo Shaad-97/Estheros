@@ -1,0 +1,67 @@
+import numpy as np
+import pandas as pd
+
+years = np.array([2020, 2021, 2022, 2023])
+forecast_years = np.array([2024, 2025, 2026, 2027])
+
+revenue = np.array([50000, 52000, 55000, 53000])
+expenses = np.array([30000, 31000, 32000, 34000])
+cash_flow = revenue - expenses
+
+A_income = np.vstack([years**i for i in range(3)]).T
+A_cashflow = np.vstack([years**i for i in range(3)]).T
+
+coef_revenue = np.linalg.lstsq(A_income, revenue, rcond=None)[0]
+coef_expenses = np.linalg.lstsq(A_income, expenses, rcond=None)[0]
+
+forecast_revenue = np.vstack([forecast_years**i for i in range(3)]).T @ coef_revenue
+forecast_expenses = np.vstack([forecast_years**i for i in range(3)]).T @ coef_expenses
+forecast_cash_flow = forecast_revenue - forecast_expenses
+
+years_forecast = np.concatenate((years, forecast_years))
+
+revenue_full = np.concatenate((revenue, forecast_revenue))
+expenses_full = np.concatenate((expenses, forecast_expenses))
+cash_flow_full = np.concatenate((cash_flow, forecast_cash_flow))
+
+results = {
+    'Year': years_forecast,
+    'Revenue (in thousands)': revenue_full,
+    'Expenses (in thousands)': expenses_full,
+    'Cash Flow (in thousands)': cash_flow_full,
+    'Revenue Coefficients': [coef_revenue.tolist()] * len(years_forecast),
+    'Expense Coefficients': [coef_expenses.tolist()] * len(years_forecast),
+}
+
+df_forecast = pd.DataFrame(results)
+
+def interpret_results(df):
+    revenue_trend = df['Revenue (in thousands)'].iloc[-4:].values
+    expenses_trend = df['Expenses (in thousands)'].iloc[-4:].values
+    cash_flow_trend = df['Cash Flow (in thousands)'].iloc[-4:].values
+
+    revenue_growth_rate = (revenue_trend[-1] - revenue_trend[0]) / revenue_trend[0] * 100
+    expenses_growth_rate = (expenses_trend[-1] - expenses_trend[0]) / expenses_trend[0] * 100
+    cash_flow_growth_rate = (cash_flow_trend[-1] - cash_flow_trend[0]) / cash_flow_trend[0] * 100
+
+    net_income_trend = revenue_trend - expenses_trend
+    net_income_growth_rate = (net_income_trend[-1] - net_income_trend[0]) / net_income_trend[0] * 100
+
+    interpretation = {
+        'Revenue Growth Rate (%)': revenue_growth_rate,
+        'Expenses Growth Rate (%)': expenses_growth_rate,
+        'Cash Flow Growth Rate (%)': cash_flow_growth_rate,
+        'Net Income Growth Rate (%)': net_income_growth_rate,
+        'Forecasted Revenue (2024-2027)': forecast_revenue,
+        'Forecasted Expenses (2024-2027)': forecast_expenses,
+        'Forecasted Cash Flow (2024-2027)': forecast_cash_flow,
+    }
+    
+    return interpretation
+
+interpretation_results = interpret_results(df_forecast)
+
+print(df_forecast)
+print("\nInterpretation of Results:")
+for key, value in interpretation_results.items():
+    print(f"{key}: {value}")
