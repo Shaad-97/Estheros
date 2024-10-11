@@ -1,0 +1,41 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+years = np.array([2020, 2021, 2022, 2023])
+revenue = np.array([100, 150, 140, 160])
+expenses = np.array([70, 90, 85, 100])
+cash_flow_operating = np.array([25, 45, 35, 50])
+
+def weighted_moving_average(data, weights):
+    wma = []
+    for i in range(len(data)):
+        if i < len(weights):
+            wma.append(np.dot(data[:i+1], weights[-(i+1):]) / sum(weights[-(i+1):]))
+        else:
+            wma.append(np.dot(data[i-len(weights)+1:i+1], weights) / sum(weights))
+    return np.array(wma)
+
+weights = np.array([0.1, 0.2, 0.3, 0.4])
+proj_years = np.array([2024, 2025, 2026, 2027])
+
+proj_revenue = weighted_moving_average(revenue, weights)
+proj_expenses = weighted_moving_average(expenses, weights)
+proj_cash_flow_operating = weighted_moving_average(cash_flow_operating, weights)
+
+forecast_revenue = np.array([proj_revenue[-1] * 1.05, proj_revenue[-1] * 1.03, proj_revenue[-1] * 1.02, proj_revenue[-1] * 1.01])
+forecast_expenses = np.array([proj_expenses[-1] * 1.04, proj_expenses[-1] * 1.03, proj_expenses[-1] * 1.02, proj_expenses[-1] * 1.01])
+forecast_cash_flow_operating = np.array([proj_cash_flow_operating[-1] * 1.03, proj_cash_flow_operating[-1] * 1.02, proj_cash_flow_operating[-1] * 1.01, proj_cash_flow_operating[-1] * 1.005])
+
+fig, ax = plt.subplots()
+
+ax.axis('off')
+rows = ["Revenue", "Expenses", "Operating Cash Flow"]
+columns = proj_years
+workings_data = np.array([forecast_revenue, forecast_expenses, forecast_cash_flow_operating])
+table = ax.table(cellText=workings_data.round(2), rowLabels=rows, colLabels=columns, cellLoc='center', loc='center')
+table.scale(1, 2)
+
+plt.show()
+
+for i in range(4):
+    print(f"Year {proj_years[i]}: Revenue = {forecast_revenue[i]:.2f}, Expenses = {forecast_expenses[i]:.2f}, Operating Cash Flow = {forecast_cash_flow_operating[i]:.2f}")
