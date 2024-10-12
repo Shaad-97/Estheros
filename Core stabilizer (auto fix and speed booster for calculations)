@@ -1,0 +1,105 @@
+import pandas as pd
+import numpy as np
+
+def format_large_numbers(value):
+    if abs(value) >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.2f}B"
+    elif abs(value) >= 1_000_000:
+        return f"{value / 1_000_000:.2f}M"
+    elif abs(value) >= 1_000:
+        return f"{value / 1_000:.2f}K"
+    else:
+        return f"{value:.2f}"
+
+def normalize_values(data, new_min=0, new_max=1):
+    min_val = min(data)
+    max_val = max(data)
+    
+    normalized = [
+        ((val - min_val) / (max_val - min_val)) * (new_max - new_min) + new_min
+        for val in data
+    ]
+    
+    return normalized
+
+def z_score_normalization(data):
+    mean = np.mean(data)
+    std_dev = np.std(data)
+    z_scores = [(val - mean) / std_dev for val in data]
+    return z_scores
+
+def handle_outliers(data, threshold=1.5):
+    Q1 = np.percentile(data, 25)
+    Q3 = np.percentile(data, 75)
+    IQR = Q3 - Q1
+    
+    lower_bound = Q1 - threshold * IQR
+    upper_bound = Q3 + threshold * IQR
+    
+    return [val for val in data if lower_bound <= val <= upper_bound]
+
+def moving_average(data, window_size):
+    return data.rolling(window=window_size).mean()
+
+def exponential_moving_average(data, span):
+    return data.ewm(span=span, adjust=False).mean()
+
+def calculate_cagr(start_value, end_value, periods):
+    return (end_value / start_value) ** (1 / periods) - 1
+
+def calculate_variance(data):
+    mean = np.mean(data)
+    variance = np.mean((data - mean) ** 2)
+    return variance
+
+def calculate_standard_deviation(data):
+    return np.sqrt(calculate_variance(data))
+
+def optimize_performance(data):
+    for column in data.select_dtypes(include=['object']).columns:
+        data[column] = data[column].astype('category')
+    return data
+
+data = {
+    'Revenue': [250000, 5000000, 150000000, 2000, 800000000, 3000000, 50000000, 700000000, 1000000, 15000000],
+    'Expenses': [150000, 3000000, 50000000, 1500, 600000000, 200000, 1000000, 20000000, 800000, 1000000]
+}
+
+df = pd.DataFrame(data)
+
+df['Revenue Cleaned'] = handle_outliers(df['Revenue'])
+df['Expenses Cleaned'] = handle_outliers(df['Expenses'])
+
+df['Formatted Revenue'] = df['Revenue'].apply(format_large_numbers)
+df['Formatted Expenses'] = df['Expenses'].apply(format_large_numbers)
+
+df['Normalized Revenue'] = normalize_values(df['Revenue'])
+df['Normalized Expenses'] = normalize_values(df['Expenses'])
+
+df['Z-Score Revenue'] = z_score_normalization(df['Revenue'])
+df['Z-Score Expenses'] = z_score_normalization(df['Expenses'])
+
+df['Revenue Moving Average'] = moving_average(df['Revenue'].rolling(3).mean(), window_size=3)
+df['Expenses Moving Average'] = moving_average(df['Expenses'].rolling(3).mean(), window_size=3)
+
+df['Revenue EMA'] = exponential_moving_average(df['Revenue'], span=3)
+df['Expenses EMA'] = exponential_moving_average(df['Expenses'], span=3)
+
+df['Revenue Variance'] = calculate_variance(df['Revenue'])
+df['Revenue Standard Deviation'] = calculate_standard_deviation(df['Revenue'])
+df['Expenses Variance'] = calculate_variance(df['Expenses'])
+df['Expenses Standard Deviation'] = calculate_standard_deviation(df['Expenses'])
+
+start_revenue = df['Revenue'].iloc[0]
+end_revenue = df['Revenue'].iloc[-1]
+cagr_revenue = calculate_cagr(start_revenue, end_revenue, len(df) - 1)
+
+start_expenses = df['Expenses'].iloc[0]
+end_expenses = df['Expenses'].iloc[-1]
+cagr_expenses = calculate_cagr(start_expenses, end_expenses, len(df) - 1)
+
+df = optimize_performance(df)
+
+print(df)
+print(f"CAGR for Revenue: {cagr_revenue:.2%}")
+print(f"CAGR for Expenses: {cagr_expenses:.2%}")
