@@ -1,0 +1,109 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+from scipy.optimize import minimize_scalar
+
+years = np.linspace(0, 10, 1000)
+
+def cash_flow(year):
+    if 0 <= year < 1:
+        return -200  
+    elif 1 <= year < 2:
+        return 300   
+    elif 2 <= year < 3:
+        return -100  
+    elif 3 <= year < 5:
+        return 500   
+    elif 5 <= year < 6:
+        return -150  
+    else:
+        return 600   
+
+C_t = np.array([cash_flow(y) for y in years])
+
+total_cash_flow = np.sum(C_t)
+
+r = 0.05
+PV = quad(lambda t: cash_flow(t) * np.exp(-r * t), 0, 10)[0]
+
+def objective(t):
+    return -cash_flow(t)
+
+res = minimize_scalar(objective, bounds=(0, 10), method='bounded')
+max_cash_flow_value = cash_flow(res.x)
+
+dC_dt = np.gradient(C_t, years)
+d2C_dt2 = np.gradient(dC_dt, years)
+
+cumulative_cash_flow = np.cumsum(C_t) * (years[1] - years[0])
+area_under_curve = quad(cash_flow, 0, 10)[0]
+
+print("---- Detailed Workings ----")
+print(f"1. Total Cash Flow Calculation:")
+print("Total Cash Flow = Sum of all Cash Flows from year 0 to 10")
+print("Cash Flows: ", C_t)
+print(f"Total Cash Flow = {total_cash_flow:.2f}")
+
+print("\n2. Present Value Calculation:")
+print(f"PV = ∫ (Cash Flow(t) * e^(-rt)) dt from 0 to 10")
+print(f"PV = {PV:.2f}")
+
+print("\n3. Maximum Cash Flow Calculation:")
+print(f"Finding maximum cash flow...")
+print(f"Maximum Cash Flow occurs at year t = {res.x:.2f} with Value = {max_cash_flow_value:.2f}")
+
+print("\n4. Rate of Change of Cash Flow (First Derivative):")
+print(f"Rate of Change = d(Cash Flow)/dt")
+print("Rate of Change Values: ", dC_dt)
+
+print("\n5. Second Derivative (Concavity):")
+print(f"Concavity = d^2(Cash Flow)/dt^2")
+print("Concavity Values: ", d2C_dt2)
+
+print("\n6. Cumulative Cash Flow Calculation:")
+print(f"Cumulative Cash Flow = Sum of Cash Flows over time")
+print("Cumulative Cash Flow Values: ", cumulative_cash_flow)
+
+print("\n7. Area Under the Curve (Cumulative Cash Flow):")
+print(f"Area = ∫ Cash Flow(t) dt from 0 to 10")
+print(f"Area Under Curve = {area_under_curve:.2f}")
+print("\n--------------------------")
+
+print("---- Summary of Results ----")
+print(f"1. Total Cash Flow over the period (0 to 10 years): {total_cash_flow:.2f}")
+print(f"2. Present Value of future cash flows: {PV:.2f}")
+print(f"3. Maximum Cash Flow occurs at approximately year {res.x:.2f} with a value of {max_cash_flow_value:.2f}.")
+print(f"4. The Rate of Change of Cash Flow indicates the speed at which cash flow is changing over time.")
+print(f"5. The Concavity values show whether the cash flow is accelerating or decelerating.")
+print(f"6. Cumulative Cash Flow provides a running total of cash flow over the years.")
+print(f"7. The Area Under the Curve represents the total cash flow accumulated over the specified time frame.")
+print("\n--------------------------")
+
+plt.figure(figsize=(12, 10))
+
+plt.subplot(4, 1, 1)
+plt.plot(years, C_t, label='Cash Flow', color='blue')
+plt.title('Cash Flow Over Time')
+plt.ylabel('Cash Flow')
+plt.grid(True)
+
+plt.subplot(4, 1, 2)
+plt.bar(np.arange(len(cumulative_cash_flow)), cumulative_cash_flow, label='Cumulative Cash Flow', color='orange')
+plt.title('Cumulative Cash Flow Over Time')
+plt.ylabel('Cumulative Cash Flow')
+plt.grid(True)
+
+plt.subplot(4, 1, 3)
+plt.plot(years, dC_dt, label='Rate of Change', color='green')
+plt.title('Rate of Change in Cash Flow')
+plt.ylabel('Rate of Change')
+plt.grid(True)
+
+plt.subplot(4, 1, 4)
+plt.fill_between(years, C_t, color='skyblue', alpha=0.5)
+plt.title('Area Under the Cash Flow Curve')
+plt.ylabel('Area')
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
